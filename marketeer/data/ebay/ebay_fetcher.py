@@ -114,8 +114,10 @@ def do_ebay_keyword_search(blob: str):
 
 if __name__ == "__main__":
     from observability.logging import setup_logging
+    from pprint import pprint
     setup_logging()
 
     for keywords_blob in app_settings.EBAY_MONITORED_KEYWORD_SEARCHES.keys():
         items = do_ebay_keyword_search(keywords_blob)
         logger.info(f"len(items) = {len(items)}")
+        pprint(items[0])
