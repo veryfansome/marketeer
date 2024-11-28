@@ -20,8 +20,16 @@ ebay_yaml_fd = open("/src/ebay.yaml")
 ebay_yaml = yaml.safe_load(ebay_yaml_fd)
 ebay_yaml_fd.close()
 
+ebay_default_item_filters = {
+    "FreeShippingOnly": "true",
+    "ListingType": ["FixedPrice"],  # "Buy It Now" listing
+    "LocatedIn": "US",
+    "MinPrice": "400",
+    "ReturnsAcceptedOnly": "true",
+}
+
 ebay_yaml_items = ebay_yaml.get("items", {})
-ebay_yaml_items_filters = ebay_yaml_items.get("filters", {})
+ebay_yaml_items_filters = {**ebay_default_item_filters, **ebay_yaml_items.get("filters", {})}
 ebay_yaml_items_searches = ebay_yaml_items.get("searches", {})
 
 EBAY_API_ENDPOINT = os.getenv("EBAY_API_ENDPOINT", "https://svcs.ebay.com")

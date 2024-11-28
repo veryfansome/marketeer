@@ -2,18 +2,18 @@
 # Camel-case field names are based on naming conventions from EBay.
 # Snake-case field names are for this app.
 items:
-  filters:
-    FreeShippingOnly: "true"
-    ListingType: [FixedPrice]  # "Buy It Now" listing
-    LocatedIn: US
-    MinPrice: "400"
-    ReturnsAcceptedOnly: "true"
-  max_age_days: 14
-  outputSelector: [SellerInfo]
-  results_per_page: 100  # Max 100
+  #filters:
+  #  FreeShippingOnly: "true"
+  #  ListingType: [FixedPrice]  # "Buy It Now" listing
+  #  LocatedIn: US
+  #  MinPrice: "400"
+  #  ReturnsAcceptedOnly: "true"
+  #max_age_days: 14
+  #outputSelector: [SellerInfo]
+  #results_per_page: 100  # Max 100
   searches:
     "Apple Macbook Pro": {MinPrice: "700"}
     "Apple iPhone": {}
     "designer handbags": {}
-  sortOrder: BestMatch
-  watched_items_only: True
+  #sortOrder: BestMatch
+  #watched_items_only: True
