@@ -10,6 +10,7 @@ pytest
 pytest-cov
 pytest-xdist
 python-dotenv
+requests
 sqlalchemy~=2.0.30
 starlette~=0.37.2
 uvicorn

@@ -4,6 +4,6 @@ datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-    url: http://marketeer-prometheus:9092
+    url: http://marketeer-prometheus:9090
     isDefault: true
     editable: true

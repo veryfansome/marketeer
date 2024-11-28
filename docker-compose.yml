@@ -2,7 +2,6 @@ networks:
   marketeer: {}
 
 services:
-
   db:
     networks: [marketeer]
     container_name: &db-host marketeer-db
@@ -39,6 +38,9 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
     ports:
       - "3002:3000"
+    depends_on:
+      prometheus-init:
+        condition: service_completed_successfully
 
   marketeer:
     networks: [marketeer]
@@ -50,9 +52,10 @@ services:
     volumes:
       - ./:/src:rw
     environment:
-      SKIP_TESTS: ${SKIP_TESTS:-true}
+      EBAY_APP_ID: ${EBAY_APP_ID:-oops}
       POSTGRES_PASSWORD: *db-password
       POSTGRES_USER: *db-user
+      SKIP_TESTS: ${SKIP_TESTS:-true}
     working_dir: /src
     command: [
       "gunicorn", "-c", "gunicorn_config.py", "app.main:app", "--bind", "0.0.0.0:8000"
@@ -76,6 +79,18 @@ services:
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --log.level=warn
+
+  prometheus-init:
+    networks: [marketeer]
+    container_name: marketeer-prometheus-init
+    image: "marketeer:latest"
+    volumes:
+      - ./:/src
+    environment:
+      WAIT_FOR_HOST: *prometheus-host
+      WAIT_FOR_PORT: 9090  # Because check is from inside container network
+    working_dir: /src
+    command: [ "scripts/wait-for-port-up.sh" ]
 
 volumes:
   grafana-storage: {}
