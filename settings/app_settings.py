@@ -2,8 +2,8 @@ import os
 
 # EBay
 
-EBAY_APP_ID = os.getenv("EBAY_APP_ID", "oops")
 EBAY_API_ENDPOINT = "https://svcs.ebay.com"
+EBAY_APP_ID = os.getenv("EBAY_APP_ID", "oops")
 # TODO: Generate programmatically
 EBAY_DEFAULT_KEYWORD_FILTER_CRITERIA = {
     'sortOrder': 'BestMatch',
@@ -16,13 +16,19 @@ EBAY_DEFAULT_KEYWORD_FILTER_CRITERIA = {
     'itemFilter(2).value': 'true',  # Items that accept returns
     'itemFilter(3).name': 'LocatedIn',
     'itemFilter(3).value': 'US',  # Items located in the US
+    'itemFilter(4).name': 'MinPrice',
+    'itemFilter(4).value': '400',
 }
+EBAY_SEARCH_RESULTS_MAX_AGE_DAYS = 14
 EBAY_SEARCH_RESULTS_PER_PAGE = 100
+EBAY_SEARCH_RESULTS_WATCHED_ITEM_ONLY = True
 EBAY_MONITORED_KEYWORD_SEARCHES = {
     "Apple Macbook Pro": {**EBAY_DEFAULT_KEYWORD_FILTER_CRITERIA, **{
         'itemFilter(4).name': 'MinPrice',
         'itemFilter(4).value': '700',
-    }}
+    }},
+    "Apple iPhone": {**EBAY_DEFAULT_KEYWORD_FILTER_CRITERIA, },
+    "designer handbags": {**EBAY_DEFAULT_KEYWORD_FILTER_CRITERIA, },
 }
 
 # Observability

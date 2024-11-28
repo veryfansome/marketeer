@@ -49,11 +49,10 @@ async def fetch():
         tasks = [loop.run_in_executor(pool, do_ebay_keyword_search, blob)
                  for blob in app_settings.EBAY_MONITORED_KEYWORD_SEARCHES.keys()]
         results = list(chain.from_iterable(await asyncio.gather(*tasks)))
-        instrument_item_metrics(results)
 
 
 @measure_exec_seconds(use_logging=True, use_prometheus=True)
-def do_ebay_keyword_search(blob: str, watched_items_only: bool = True):
+def do_ebay_keyword_search(blob: str):
     headers = {"X-EBAY-SOA-SECURITY-APPNAME": app_settings.EBAY_APP_ID}
     params = {**{
         "OPERATION-NAME": "findItemsByKeywords",
@@ -65,31 +64,13 @@ def do_ebay_keyword_search(blob: str, watched_items_only: bool = True):
     response = requests.get(f"{app_settings.EBAY_API_ENDPOINT}/services/search/FindingService/v1",
                             headers=headers, params=params, timeout=30)
     response.raise_for_status()
-    return [i for i in response.json().get("findItemsByKeywordsResponse", [])[0].get("searchResult", [])[0].get("item", [])
-            if (not watched_items_only
-                or ('watchCount' in i["listingInfo"][0] and int(i["listingInfo"][0]['watchCount'][0]) > 0))]
 
-
-def instrument_item_metrics(items_to_be_instrumented):
-    for item in items_to_be_instrumented:
-        label_map = {
-            "categoryId":  item["primaryCategory"][0]["categoryId"][0],
-            "categoryName":  item["primaryCategory"][0]["categoryName"][0],
-            "conditionDisplayName":  item["condition"][0]["conditionDisplayName"][0],
-            "conditionId":  item["condition"][0]["conditionId"][0],
-            "feedbackRatingStar":  item["sellerInfo"][0]["feedbackRatingStar"][0],
-            "itemId":  item["itemId"][0],
-            "postalCode":  "n/a" if "postalCode" not in item else item["postalCode"][0],
-            "sellerUserName":  item["sellerInfo"][0]["sellerUserName"][0],
-            "subtitle":  "n/a" if "subtitle" not in item else item["subtitle"][0],
-            "title":  item["title"][0],
-            "topRatedListing":  item["topRatedListing"][0],
-            "topRatedSeller":  item["sellerInfo"][0]["topRatedSeller"][0],
-        }
-        if 'watchCount' in item["listingInfo"][0]:
-            watch_count = int(item["listingInfo"][0]['watchCount'][0])
-            ebay_item_watch_count_gauge.labels(**label_map).set(watch_count)
-            ebay_item_watch_count_histogram.labels(**label_map).observe(watch_count)
+    returned_items = []
+    for item in response.json()["findItemsByKeywordsResponse"][0]["searchResult"][0]["item"]:
+        watch_count = 0 if 'watchCount' not in item["listingInfo"][0] else int(item["listingInfo"][0]['watchCount'][0])
+        if app_settings.EBAY_SEARCH_RESULTS_WATCHED_ITEM_ONLY and watch_count < 1:
+            logger.debug(f"Filtered out item({item["itemId"][0]}) due to lack of watchers")
+            continue
 
         listing_end_time_str = item["listingInfo"][0]["endTime"][0]
         listing_end_time = datetime.fromisoformat(listing_end_time_str.replace('Z', '+00:00'))
@@ -98,12 +79,37 @@ def instrument_item_metrics(items_to_be_instrumented):
         current_time = datetime.now(timezone.utc)
 
         time_since_start_time = current_time - listing_start_time
+        if time_since_start_time.days > app_settings.EBAY_SEARCH_RESULTS_MAX_AGE_DAYS:
+            logger.debug(f"Filtered out item({item["itemId"][0]}) due to age({time_since_start_time.days}d)")
+            continue
+
+        label_map = {
+            "categoryId": item["primaryCategory"][0]["categoryId"][0],
+            "categoryName": item["primaryCategory"][0]["categoryName"][0],
+            "conditionDisplayName": item["condition"][0]["conditionDisplayName"][0],
+            "conditionId": item["condition"][0]["conditionId"][0],
+            "feedbackRatingStar": item["sellerInfo"][0]["feedbackRatingStar"][0],
+            "itemId": item["itemId"][0],
+            "postalCode": "n/a" if "postalCode" not in item else item["postalCode"][0],
+            "sellerUserName": item["sellerInfo"][0]["sellerUserName"][0],
+            "subtitle": "n/a" if "subtitle" not in item else item["subtitle"][0],
+            "title": item["title"][0],
+            "topRatedListing": item["topRatedListing"][0],
+            "topRatedSeller": item["sellerInfo"][0]["topRatedSeller"][0],
+        }
         ebay_item_listing_age_days_gauge.labels(**label_map).set(time_since_start_time.days)
         ebay_item_listing_age_days_histogram.labels(**label_map).observe(time_since_start_time.days)
 
         time_until_end_time = listing_end_time - current_time
         ebay_item_listing_days_remaining_gauge.labels(**label_map).set(time_until_end_time.days)
         ebay_item_listing_days_remaining_histogram.labels(**label_map).observe(time_until_end_time.days)
+
+        if 'watchCount' in item["listingInfo"][0]:
+            watch_count = int(item["listingInfo"][0]['watchCount'][0])
+            ebay_item_watch_count_gauge.labels(**label_map).set(watch_count)
+            ebay_item_watch_count_histogram.labels(**label_map).observe(watch_count)
+        returned_items.append(item)
+    return returned_items
 
 
 if __name__ == "__main__":
