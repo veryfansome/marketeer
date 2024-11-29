@@ -14,6 +14,8 @@ items:
   searches:
     "Apple Macbook Pro": {MinPrice: "700"}
     "Apple iPhone": {}
-    "designer handbags": {}
+    "designer handbag": {}
+    "gaming computer": {MinPrice: "700"}
+    "luxury watch": {}
   #sortOrder: BestMatch
   #watched_items_only: True

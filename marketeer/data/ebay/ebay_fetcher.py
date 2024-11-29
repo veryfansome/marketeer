@@ -11,7 +11,10 @@ from settings import app_settings
 
 logger = logging.getLogger(__name__)
 
+# Camel-case label names are based on naming conventions from EBay.
+# Snake-case label names are for this app.
 item_labels = [
+    "age_bucket",
     "categoryId",
     "categoryName",
     "conditionDisplayName",
@@ -83,7 +86,19 @@ def do_ebay_keyword_search(blob: str):
             logger.debug(f"Filtered out item({item["itemId"][0]}) due to age({time_since_start_time.days}d)")
             continue
 
+        age_bucket = "n/a"
+        if time_since_start_time.days <= 1:
+            age_bucket = "0-1 days"
+        elif 1 < time_since_start_time.days <= 3:
+            age_bucket = "1-3 days"
+        elif 3 < time_since_start_time.days <= 7:
+            age_bucket = "3-7 days"
+        elif 7 < time_since_start_time.days <= 14:
+            age_bucket = "7-14 days"
+        elif time_since_start_time.days > 14:
+            age_bucket = "14-inf days"
         label_map = {
+            "age_bucket": age_bucket,
             "categoryId": item["primaryCategory"][0]["categoryId"][0],
             "categoryName": item["primaryCategory"][0]["categoryName"][0],
             "conditionDisplayName": item["condition"][0]["conditionDisplayName"][0],
