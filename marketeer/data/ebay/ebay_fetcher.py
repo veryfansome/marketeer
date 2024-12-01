@@ -48,7 +48,7 @@ ebay_item_watch_count_histogram = Histogram("ebay_item_watch_count_histogram",
 async def fetch():
     logger.info("Fetching items from Ebay")
     loop = asyncio.get_running_loop()
-    with ThreadPoolExecutor() as pool:
+    with ThreadPoolExecutor(max_workers=app_settings.EBAY_FETCH_MAX_WORKERS) as pool:
         tasks = [loop.run_in_executor(pool, do_ebay_keyword_search, blob)
                  for blob in app_settings.EBAY_MONITORED_KEYWORD_SEARCHES.keys()]
         results = list(chain.from_iterable(await asyncio.gather(*tasks)))
@@ -66,7 +66,9 @@ def do_ebay_keyword_search(blob: str):
     }, **app_settings.EBAY_MONITORED_KEYWORD_SEARCHES[blob]}
     response = requests.get(f"{app_settings.EBAY_API_ENDPOINT}/services/search/FindingService/v1",
                             headers=headers, params=params, timeout=30)
-    response.raise_for_status()
+    if response.status_code != 200:
+        logger.error(f"Ebay API {response.status_code} response body: {response.text}")
+        response.raise_for_status()
 
     returned_items = []
     for item in response.json()["findItemsByKeywordsResponse"][0]["searchResult"][0]["item"]:

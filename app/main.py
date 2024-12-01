@@ -9,6 +9,7 @@ import os
 
 from marketeer.data.ebay.ebay_fetcher import fetch as ebay_fetch
 from observability.logging import logging, setup_logging
+from settings import app_settings
 
 scheduler = AsyncIOScheduler()
 
@@ -32,7 +33,8 @@ async def lifespan(app: FastAPI):
     :return:
     """
 
-    scheduler.add_job(ebay_fetch, 'interval', seconds=60, name='fetch:eBay')
+    await ebay_fetch()
+    scheduler.add_job(ebay_fetch, 'interval', seconds=app_settings.EBAY_FETCH_INTERVAL_SECONDS, name='fetch:eBay')
     scheduler.start()
     # Started
     yield

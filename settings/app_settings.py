@@ -40,6 +40,10 @@ EBAY_DEFAULT_KEYWORD_FILTER_CRITERIA = {
     **{f"outputSelector({idx})": selector for idx, selector in enumerate(
         ebay_yaml_items.get("outputSelector", ["SellerInfo"]))},
 }
+
+EBAY_FETCH_INTERVAL_SECONDS = ebay_yaml_items.get("fetch_interval_seconds", 600)
+EBAY_FETCH_MAX_WORKERS = ebay_yaml_items.get("fetch_max_workers", 1)
+
 EBAY_MONITORED_KEYWORD_SEARCHES = {
     keywords_blob: {
         **EBAY_DEFAULT_KEYWORD_FILTER_CRITERIA,

@@ -2,6 +2,8 @@
 # Camel-case field names are based on naming conventions from EBay.
 # Snake-case field names are for this app.
 items:
+  #fetch_interval_seconds: 600
+  #fetch_max_workers: 1
   #filters:
   #  FreeShippingOnly: "true"
   #  ListingType: [FixedPrice]  # "Buy It Now" listing
